@@ -3,8 +3,13 @@
 
 StochasticPowerModels.jl is an extension package of PowerModels.jl for 
 Stochastic (Optimal) Power Flow. It is designed to enable inclusion of 
-uncertainty in Steady-State Power Network Optimization. In this branch of StochasticPowerModels.jl, the base code of StochasticPowerModels.jl is utilized to obtain Stochastic PV hosting capacity of LVDS.
+uncertainty in Steady-State Power Network Optimization. 
 
+In this project file, the base code of StochasticPowerModels.jl is utilized to obtain Stochastic PV hosting capacity of LVDS. Activating the environment should be enough using:
+ ```
+    using Pkg
+    Pkg.activate(".")
+```
 ## Core Problem Specification
 
 - Stochastic Optimal Power Flow (sOPF) HC
@@ -38,22 +43,32 @@ For an example of the base code, the user is referred to `/test/data/matpower/ca
     
     Koirala, Arpan; Van Aacker, Tom; Hashmi, Md Umar; D'hulst, Reinhilde; Van Hertem, Dirk (2022): Chance-constrained optimization based PV hosting capacity calculation using general Polynomial Chaos. TechRxiv. Preprint. https://doi.org/10.36227/techrxiv.21394950.v1 
     
+## Network Data with Stochastic Data Extension
+The Folder /text/data/Spanish/All_feeder has Spanish network on folder in JSON format. 
+
+The file `test/data/Spanish/CreatePMDDictionary.jl` is the parser file to convert the JSON file into `PowerModels.jl` format.
+
+The original dataset consists of a full Low voltage network of sub-urban region with 30 transformers, 160 feeders, 10290 nodes and 8087 consumers, with load profiles of 20 days from actual smart-meter.
+The paper is available in https://www.sciencedirect.com/science/article/pii/S0142061519318836
+and the link for full data-set: https://data.mendeley.com/datasets/685vgp64sm/1
+
+For the original networks, the line impedance is specified 4x4 matrice without mutual impedance and the load from smart meter data for 20 days.
+
+However, in this part the load and irradiance are defined as Beta distribution in folders `beta_lm_2016_8_6.csv` and `beta_pm_2016_8_6.csv` respectively for a high irradiance day in spring. 
+
+For each feeder there are 4 JSON file describing the feeder topology:
+	-*_configuration.json, 
+	-*_branches.json, 
+	-*_buses.json, and 
+	-*_devices.json 
+and 1 csv file:
+  	_*.csv- which is the linking file between devices and the load uncertainty. 
+
+
+
     
-
 ## Installation
-
-The latest stable release of StochasticPowerModels can be installed using the 
-Julia package manager:
-
-```
-] add https://github.com/timmyfaraday/StochasticPowerModels.jl.git
-```
-
-In order to test whether the package works, run:
-
-```
-] test StochasticPowerModels
-```
+For this application the installation of StochasticPowerModels.jl is not suggested as this application might not be updated along with the changes in the main package and will remain as an standalone application.
 
 ## Acknowledgements
 
