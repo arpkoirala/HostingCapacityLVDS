@@ -118,7 +118,7 @@ end
 
 
 "Converts JSON file of three phase DN to single phase equivalent"
-function build_mathematical_model_single_phase(dir, config_file_name;t_s=52, pd = 0.0, qd = 0.0, scale_factor = 1.0, curt=0.0, cross_area_fact=1.0)
+function build_mathematical_model_single_phase(dir, config_file_name, load_dist_csv, pv_dist_csv; t_s=52, pd = 0.0, qd = 0.0, scale_factor = 1.0, curt=0.0, cross_area_fact=1.0)
 #configuration = "star"
 
 """
@@ -137,9 +137,9 @@ network_model = Dict{String,Any}()
 configuration_json_dict = Dict{Any,Any}()
 device_df=CSV.read(dir*config_file_name[1:length(config_file_name)-19]*".csv", DataFrame)
 
-dist_lv=CSV.read(dir*"beta_lm_2016_8_6"*".csv", DataFrame)
-# dist_pv=CSV.read(dir*"beta_pm_2016_8_6"*".csv", DataFrame)
-dist_pv=CSV.read(dir*"beta_pm_2022_181"*".csv", DataFrame)
+dist_lv=CSV.read(dir*load_dist_csv, DataFrame)
+dist_pv=CSV.read(dir*pv_dist_csv, DataFrame)
+# dist_pv=CSV.read(dir*"beta_pm_2022_181"*".csv", DataFrame)
 dist_pv_ts= dist_pv[in([t_s]).(dist_pv.timeslot),:]
 dist_lv_ts=dist_lv[in([t_s]).(dist_lv.timeslot),:]
 

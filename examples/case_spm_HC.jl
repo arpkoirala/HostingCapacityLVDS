@@ -1,3 +1,34 @@
+"""
+################################################################################
+#  A. Koirala, T. V. Aacker, M. U. Hashmi, R. D’hulst, and D. V. Hertem,       #
+“Chance-constrained optimization based PV hosting capacity calculation using   #
+general Polynomial Chaos,”                                                     #
+Submitted to IEE Transactions of Power Systems.                                #
+[Online]: https://tinyurl.com/yckbp58j                                         #
+################################################################################
+# Based on StochasticPowerModels.jl                                            #
+# An extention package of PowerModels.jl for Stochastic (Optimal) Power Flow   #
+# See http://github.com/timmyfaraday/StochasticPowerModels.jl                  #
+################################################################################
+# This example is for Numerical Illustration C and D on Section IV of the paper      #
+# In first Fig, OPF HC is compared with gPC-CC-OPF HC                          #
+# Second figure is Comparision of 4 CC-OPF scenarios
+• S1: The PV installations of consumers are in between 0 to 15 kWp. 
+  The corresponding CC-OPF HC is 52.5 kWp.
+• S2: The PV installations of consumers are equal, and in between 0 to 15 kWp.
+  The corresponding CC-OPF HC of the test feeder is 44.8 kWp.
+• S3: Consumer 1 and 2 in the test feeder can have PV installations
+      between 0 and 10 kWp, consumer 3 has fixed PV installation of 5 kWp,
+      and the remaining consumer can have PV installations between 0 and 15 kWp.
+  The corresponding CC-OPF HC of the test feeder is 47.4 kWp.
+• S4: All consumers have PV installations between 5 and 10 kWp.
+     The corresponding CC-OPF HC is 47.4 kWp.
+#Third fig is the tuning of moments based reformulation
+################################################################################
+
+# variables
+"""
+
 using Pkg
 Pkg.activate(".")
 using JuMP
@@ -22,152 +53,91 @@ deg  = 2
 aux  = true
 red  = false
 
-#feeder = "All_feeder/65019_74478_configuration.json" 
-
-#feeder = "All_feeder/86315_785381_configuration.json" #50)% error feeder
-
-#feeder = "All_feeder/1076069_1274125_configuration.json" #65025_80123_configuration.json"#1076069_1274125_configuration.json"
-
-
 feeder ="Pola/1076069_1274129_mod_configuration.json" #feeder with 7 consumer for test
 # data
 file  = joinpath(BASE_DIR, "test/data/Spanish/")
+load_file= "beta_lm_2016_8_6.csv"
+pv_file = "beta_pm_2016_8_6.csv"
 
-data  = SPM.build_mathematical_model_single_phase(file, feeder, t_s= 59)
-[data["PV"]["$i"]["p_min"]=0 for i=1:2]
-    
-[data["PV"]["$i"]["p_max"]=10 for i=1:2]
-
-[data["PV"]["$i"]["p_min"]=5 for i=3:3]
-    
-[data["PV"]["$i"]["p_max"]=5 for i=3:3]
-
+"""
+# Code to plot the result of Fig. 5 without the scenario based method #
+"""
+data  = SPM.build_mathematical_model_single_phase(file, feeder,load_file, pv_file, t_s= 59)
 result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)
-
-
 s2 = Dict("output" => Dict("duals" => true))
 result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+scatter([1,2,3,4,5,6,7],[result_hc_2["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="gPC-CC-OPF HC", figsize=(28,8))
+scatter!([1,2,3,4,5,6,7],[result_hc["solution"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="OPF HC", figsize=(28,8))
+plot!(xlabel="Device Id")
+plot!(ylabel="PV size [kWp]")
+plot!(title="Fig. 5: deterministic vs stochastic OPF")
 
 
-#tO= TimerOutput()
+"""
+# Code to plot the result of Fig. 6 For different Scenario #
+• S1: The PV installations of consumers are in between 0 to 15 kWp. The corresponding CC-OPF HC is 52.5 kWp.
+• S2: The PV installations of consumers are equal, and in between 0 to 15 kWp. The corresponding CC-OPF HC of
+      the test feeder is 44.8 kWp.
+• S3: Consumer 1 and 2 in the test feeder can have PV installations between 0 and 10 kWp, consumer 3 has fixed
+      PV installation of 5 kWp, and the remaining consumer can have PV installations between 0 and 15 kWp. The
+      corresponding CC-OPF HC of the test feeder is 47.4 kWp.
+• S4: All consumers have PV installations between 5 and 10 kWp. The corresponding CC-OPF HC is 47.4 kWp.
+"""
 
-@timeit tO "outer" begin
-    s2 = Dict("output" => Dict("duals" => true))
-    
-    e=1;
-    m=1
+
+result_hc_s1= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+scatter([1,2,3,4,5,6,7],[result_hc_s1["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="S1", figsize=(28,8))
+
+result_hc_s2= SPM.run_sopf_hc_equal_pv(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+scatter!([1,2,3,4,5,6,7],[result_hc_s2["objective"] for i=1:length(data["load"])],label="S2", figsize=(28,8))
+
+
+[data["PV"]["$i"]["p_min"]=0 for i=1:2]    
+[data["PV"]["$i"]["p_max"]=10 for i=1:2]
+[data["PV"]["$i"]["p_min"]=5 for i=3:3]
+[data["PV"]["$i"]["p_max"]=5 for i=3:3]
+
+result_hc_s3= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+scatter!([1,2,3,4,5,6,7],[result_hc_s3["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="S3", figsize=(28,8))
+
+[data["PV"]["$i"]["p_min"]=5 for i=1:7]    
+[data["PV"]["$i"]["p_max"]=10 for i=1:7]
+result_hc_s4= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+scatter!([1,2,3,4,5,6,7],[result_hc_s4["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="S4", figsize=(28,8))
+plot!(xlabel="Device Id")
+plot!(ylabel="PV size [kWp]")
+plot!(title="Fig 6: Different Scenario")
+
+
+"""
+Fig. 8 Moment based reformulation
+
+"""
+data  = SPM.build_mathematical_model_single_phase(file, feeder,load_file, pv_file, t_s= 59)
+result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+
+if result_hc_2["termination_status"]== PM.LOCALLY_SOLVED
     for i=1:length(data["bus"])
         if -result_hc_2["solution"]["nw"]["1"]["bus"]["$i"]["dual_voltage_max"]>500
             l_old=data["bus"]["$i"]["λvmax"]
             m=sample(result_hc_2, "bus", i, "vs"; sample_size=100000)
             if quantile(m,[0.95])[1]>1.001*data["bus"]["$i"]["vmax"]^2
-                data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]^2-mean(m))/std(m)+0.3
+                data["bus"]["$i"]["λvmax"]=l_old+0.4
             elseif quantile(m,[0.95])[1]>1.0001*data["bus"]["$i"]["vmax"]^2
-                    data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]^2-mean(m))/std(m)+0.1
+                    data["bus"]["$i"]["λvmax"]=l_old+0.2
             elseif quantile(m,[0.95])[1]< 0.99*data["bus"]["$i"]["vmax"]^2
-                data["bus"]["$i"]["λvmax"]= l_old-0.8
+                data["bus"]["$i"]["λvmax"]= l_old-0.6
             elseif quantile(m,[0.95])[1]< 1*data["bus"]["$i"]["vmax"]^2
                 data["bus"]["$i"]["λvmax"]= l_old-0.2
             end
         end
     end
 
-    #[data["branch"]["$i"]["λcmax"]= 3 for i=1:18]
-    #data["branch"]["13"]["λcmax"]= 2
     result_hc_1= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
-
-
 end
 
-for i=1:length(data["bus"])
-    if -result_hc_2["solution"]["nw"]["1"]["bus"]["$i"]["dual_voltage_max"]>500
-        l_old=data["bus"]["$i"]["λvmax"]
-        m=sample(result_hc_2, "bus", i, "vm"; sample_size=100000)
-        if quantile(m,[0.95])[1]>1.001*data["bus"]["$i"]["vmax"]
-            data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]-mean(m))/std(m)+0.3
-        elseif quantile(m,[0.95])[1]>1.0001*data["bus"]["$i"]["vmax"]
-                data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]-mean(m))/std(m)+0.1
-        else
-            data["bus"]["$i"]["λvmax"]= 2*l_old-(data["bus"]["$i"]["vmax"]-mean(m))/std(m)
-        end
-    end
-end
-
-
-while e>0.005
-    mean_voltage=[result_hc["solution"]["nw"]["1"]["bus"]["$j"]["vm"] for j=1:length(data["bus"])]
-    i=argmax(mean_voltage)
-    samp = sample(result_hc, "bus", i, "vm"; sample_size=10000)
-    if sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 > 0.055
-        if sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 > 0.08
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]+0.1 for i=45:52]
-        else 
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]+0.05 for i=1:length(data["bus"])]
-        end
-    elseif sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 < 0.045
-        if sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 < 0.02
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]-0.1 for i=1:length(data["bus"])]
-        else 
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]-0.05 for i=1:length(data["bus"])]
-        end
-    end
-
-        result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-        mean_voltage=[result_hc["solution"]["nw"]["1"]["bus"]["$j"]["vm"] for j=1:length(data["bus"])]
-        i=argmax(mean_voltage)
-        e =  abs(0.05-sum([a>1.05 for a in sample(result_hc, "bus", i, "vm"; sample_size=10000)])/10000)
-    print("iteration:$m")
-    print(e)
-    m=m+1
-end
-
-[data["bus"]["$i"]["λvmax"]=2.4 for i=1:63]
-[data["branch"]["$i"]["λcmax"]=1.5 for i=1:63]
-
-result_hc2_4= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-
-a=[result_hc2_4["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:52]
-hc2= Dict()
-for i=30:80
- data  = SPM.build_mathematical_model_single_phase(file, feeder, t_s= i)
- [data["bus"]["$i"]["λvmax"]=2.4 for i=1:63]
- [data["branch"]["$i"]["λcmax"]=1.5 for i=1:63]
- result_hc2 = run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
- PV_HC = result_hc2["objective"]
- hc2[i]=PV_HC
-end
-#sdata = build_stochastic_data_hc(data, deg)
-#remove the existing generators and keep onl;y in slack bus
-#data["gen"] = Dict(k => v for (k, v) in data["gen"] if data["bus"][string(data["gen"][k]["gen_bus"])]["bus_type"] == 3)
-#[data["bus"][k]["bus_type"]=1 for (k,v) in data["bus"] if data["bus"][k]["bus_type"]==2]
-
-#-----------------------------------
-# run the convenience functions for stochastic OPF for IVR and ACR
-#result_ivr = run_sopf_iv(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-result_hc2 = run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-
-@assert result_hc2["termination_status"] == PM.LOCALLY_SOLVED
-#@assert result_hc["termination_status"] == PM.LOCALLY_SOLVED
-#the optimal objective values (expectation) are 
-obj_ivr = result_hc2["objective"] 
-#bj_acr = result_hc["objective"] 
-
-# print variables for all polynomial indices k
-SPM.print_summary(result_hc2["solution"])
-
-# print variables for a specific index k
-k=1
-SPM.print_summary(result_hc2["solution"]["nw"]["$k"]["PV"])
-
-# get polynomial chaos coefficients for specific component
-crd_pv = pce_coeff(result_hc2, "PV", 1, "crd_pv") 
-
-# obtain 10 samples of the generator active power output variable
-crd_sample = sample(result_hc2, "PV", 1, "crd_pv"; sample_size=10) 
-
-# obtain an kernel density estimate of the PV active power output variable
-crd_density = density(result_ivr, "PV", 1, "crd_pv"; sample_size=10) 
-
-#-----------------------------------
-# alternatively, you can first read in PowerModels dict, 
-# from a file with stochastic data extensions:
+scatter([0,1,2,3,4,5,6,7],[sum(sample(result_hc_2, "bus", i, "vs"; sample_size=100000).>(1.05^2))/100000 for i=1:length(data["bus"])], label="before tuning")
+scatter!([0,1,2,3,4,5,6,7],[sum(sample(result_hc_1, "bus", i, "vs"; sample_size=100000).>1.05^2)/100000 for i=1:length(data["bus"])], label="after tuning")
+plot!(xlabel="Bus Id")
+plot!(ylabel="P(Ui>1.05)")
+plot!(title="Fig 7: Probability of voltage in each node crossing 1.05 pu")

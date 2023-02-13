@@ -21,7 +21,7 @@ ipopt_solver = Ipopt.Optimizer
 deg  = 2
 aux  = true
 r  = false
-dir="C://Users//karpan//.julia//dev//StochasticPowerModels//test//data//Spanish//All_feeder"
+dir=BASE_DIR*"/test/data/Spanish/All_feeder"
 all_feeder=CSV.read(dir*"/ts_all_feeder.csv",DataFrame,header=["conf", "ts","HC1","HC2"])
 all_feeder[!,"HC1"]=zeros(nrow(all_feeder))
 all_feeder[!,"HC2"]=zeros(nrow(all_feeder))
@@ -31,14 +31,21 @@ hc2=[]
 hc3=[]
 t_cc=[]
 t_opf=[]
+nodes=[]
+consumers=[]
+unc=[]
 global i=0
 for b in eachrow(all_feeder)
     feeder="All_feeder/"*b.conf
-    i=i+1
+    global i=i+1
     print("Feeder no: $i \n")
     #feeder="All_feeder/"*all_feeder[1,"conf"]
     file  = joinpath(BASE_DIR, "test/data/Spanish/")
     data  = SPM.build_mathematical_model_single_phase(file, feeder, t_s= 59)
+    push!(unc,length(data["sdata"]))
+    push!(nodes,length(data["bus"]))
+    push!(consumers,length(data["load"]))
+
     [data["bus"]["$i"]["vmin"]=0.9 for i=1:length(data["bus"])]
     s2 = Dict("output" => Dict("duals" => true))
     result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=r; setting=s2)
@@ -71,7 +78,7 @@ for b in eachrow(all_feeder)
     else
         push!(hc1,-1)
         push!(hc2,-1)
-        push!(t_cc, -1)
+        push!(t_cc, result_hc_2["solve_time"])
     end
     result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=r; setting=s2, stochastic=false)
     
@@ -83,12 +90,15 @@ for b in eachrow(all_feeder)
         push!(t_opf, result_hc["solve_time"])
     end
 end
-all_feeder[!,"HC1"]=hc1
-all_feeder[!,"HC2"]=hc2
-all_feeder[!,"HC3"]=hc3
+all_feeder[!,"HC0"]=hc1
+all_feeder[!,"HC_CC"]=hc2
+all_feeder[!,"HC_OPF"]=hc3
 all_feeder[!,"t_opf"]=t_opf
 all_feeder[!,"t_cc"]=t_cc
-CSV.write("PV_HC_new_lower_vmin.csv",all_feeder)
+all_feeder[!,"consumers"]=consumers
+all_feeder[!,"nodes"]= nodes
+all_feeder[!, "unc"] = unc
+CSV.write("PV_HC_feeder_final.csv",all_feeder)
 """
 #deterministic
 

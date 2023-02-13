@@ -44,7 +44,9 @@ p=collect(it);
 
 feasible=[]
 infeasible=[]
-for ind in p[1200000:2000000]
+lim=60000
+lim2=30000
+for ind in p[lim2+1:lim]
     [data["PV"]["$i"]["p_size"]=ind[i] for  i=1:length(data["load"])] 
     result_pf= SPM.run_pf_deterministic(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)
     if result_pf["termination_status"]== PM.LOCALLY_SOLVED
@@ -55,10 +57,13 @@ for ind in p[1200000:2000000]
 end
 
 
-histogram(infeasible)
+histogram(infeasible,fmt=:png)
 histogram!(feasible)
 
-vline!([result_hc["objective"]])
+CSV.write("inf_scred_$(lim).csv",DataFrame(inf=infeasible))
+CSV.write("feasible_scred_$(lim).csv",DataFrame(fea=feasible))
+
+
 """
 s2 = Dict("output" => Dict("duals" => true))
 result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
