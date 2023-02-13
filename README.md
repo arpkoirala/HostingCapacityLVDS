@@ -1,31 +1,26 @@
-# StochasticPowerModels
-
-<a href="https://github.com/timmyfaraday/StochasticPowerModels.jl/actions?query=workflow%3ACI"><img src="https://github.com/timmyfaraday/StochasticPowerModels.jl/workflows/CI/badge.svg"></img></a>
-<a href="https://codecov.io/gh/timmyfaraday/StochasticPowerModels.jl"><img src="https://img.shields.io/codecov/c/github/timmyfaraday/StochasticPowerModels.jl?logo=Codecov"></img></a>
-<a href="https://timmyfaraday.github.io/StochasticPowerModels.jl/"><img src="https://github.com/timmyfaraday/StochasticPowerModels.jl/workflows/Documentation/badge.svg"></img></a>
+# Hosting capacity of LVDS using StochasticPowerModels
 
 
 StochasticPowerModels.jl is an extension package of PowerModels.jl for 
 Stochastic (Optimal) Power Flow. It is designed to enable inclusion of 
-uncertainty in Steady-State Power Network Optimization. 
-
-Note that development is ongoing, and changes can be breaking without notice. We plan to register the package once we feel comfortable with the state of the implementation.
+uncertainty in Steady-State Power Network Optimization. In this branch of StochasticPowerModels.jl, the base code of StochasticPowerModels.jl is utilized to obtain Stochastic PV hosting capacity of LVDS.
 
 ## Core Problem Specification
 
-- Stochastic Optimal Power Flow (sOPF)
+- Stochastic Optimal Power Flow (sOPF) HC
+- Deterministic HC
 
-## Core Network Formulation
 
-- Exact
-    - ACR
-    - IVR 
+## Varients of HC
+
+- Equal PV
+- Unequal PV
 
 ## Core Stochastic Specification
-For now, we only support Polynomial Chaos Expansion. We may add alternative stochastic optimization methods at a later stage.
+For now, we only support Polynomial Chaos Expansion based stochastic HC and deterministic HC in IV formulation.
 
 - Polynomial Chaos Expansion
-    - with/without auxiliary variables/constraints
+    - with auxiliary variables/constraints
 
 ## Network Data with Stochastic Data Extension
 
@@ -35,7 +30,15 @@ For now, we only support Polynomial Chaos Expansion. We may add alternative stoc
     - stochastic gen data: `mpc.gen_sdata`, including: `λpmin`, `λpmax`, `λqmin` and `λqmax`, and
     - stochastic branch data: `mpc.branch_sdata`, including: `λcmax`.
 
-For an example, the user is referred to `/test/data/matpower/case5_spm.m`
+For an example of the base code, the user is referred to `/test/data/matpower/case5_spm.m`
+
+## Example in Hosting Capacity Calculation
+- For an example in different type of HC calculation:
+    - `examples/case_spm_HC.jl` is pointed out where the codes for HC calculation to obtain Fig. 6, 7 and 8 can be found of the following paper:
+    
+    Koirala, Arpan; Van Aacker, Tom; Hashmi, Md Umar; D'hulst, Reinhilde; Van Hertem, Dirk (2022): Chance-constrained optimization based PV hosting capacity calculation using general Polynomial Chaos. TechRxiv. Preprint. https://doi.org/10.36227/techrxiv.21394950.v1 
+    
+    
 
 ## Installation
 
