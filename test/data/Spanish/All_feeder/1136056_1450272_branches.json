@@ -34,7 +34,7 @@
     {
         "branchId":4,
         "cableLength":12,
-        "cableType":"aansluitkabel",
+        "cableType":"BT - RV 0,6/1 KV 3(1*150 KAL) + 1*95 KAL",
         "downBusId":5,
         "type":"Cable",
         "upBusId":4
