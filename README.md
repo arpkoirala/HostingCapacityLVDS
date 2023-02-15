@@ -57,13 +57,12 @@ For the original networks, the line impedance is specified 4x4 matrice without m
 However, in this part the load and irradiance are defined as Beta distribution in folders `beta_lm_2016_8_6.csv` and `beta_pm_2016_8_6.csv` respectively for a high irradiance day in spring. 
 
 For each feeder there are 4 JSON file describing the feeder topology:
-	
-- *_configuration.json, 
-- *_branches.json, 
-- *_buses.json, and 
-- *_devices.json 
+	-*_configuration.json, 
+	-*_branches.json, 
+	-*_buses.json, and 
+	-*_devices.json 
 and 1 csv file:
-- *.csv- which is the linking file between devices and the load uncertainty. 
+  	_*.csv- which is the linking file between devices and the load uncertainty. 
 
 
 
