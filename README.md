@@ -65,7 +65,11 @@ For each feeder there are 4 JSON file describing the feeder topology:
 and 1 csv file:
 - *.csv- which is the linking file between devices and the load uncertainty. 
 
-
+## Example in Hosting Capacity Calculation for Non-synthetic European LVDS
+- The HC calculation of all feeders:
+    - `examples/case_spm_HC_all_feeder.jl` is pointed out where the codes for HC calculation for all feeder and code to obtain Fig. 11 of the following paper:
+    
+    Koirala, Arpan; Van Aacker, Tom; Hashmi, Md Umar; D'hulst, Reinhilde; Van Hertem, Dirk (2022): Chance-constrained optimization based PV hosting capacity calculation using general Polynomial Chaos. TechRxiv. Preprint. https://doi.org/10.36227/techrxiv.21394950.v1 
 
     
 ## Installation
