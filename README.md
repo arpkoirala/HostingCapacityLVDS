@@ -9,6 +9,7 @@ In this project file, the base code of StochasticPowerModels.jl is utilized to o
  ```
     using Pkg
     Pkg.activate(".")
+    Pkg.instantiate
 ```
 ## Core Problem Specification
 
