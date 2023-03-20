@@ -27,14 +27,16 @@ red  = false
 #feeder = "All_feeder/86315_785381_configuration.json" #50)% error feeder
 
 #feeder = "All_feeder/1076069_1274125_configuration.json" #65025_80123_configuration.json"#1076069_1274125_configuration.json"
-f=[ "All_feeder/65019_73796_configuration.json",
-"All_feeder/65019_74430_configuration.json",
-"All_feeder/65019_74469_configuration.json",
-"All_feeder/65019_74478_configuration.json",
-"All_feeder/65019_74559_configuration.json",
-"All_feeder/65019_74572_configuration.json",
+# f=[ "All_feeder/65019_73796_configuration.json", #Feeders for Selina
+# "All_feeder/65019_74430_configuration.json",
+# "All_feeder/65019_74469_configuration.json",
+# "All_feeder/65019_74478_configuration.json",
+# "All_feeder/65019_74559_configuration.json",
+# "All_feeder/65019_74572_configuration.json",
+# ]
+f=[ "All_feeder/65016_1521529_configuration.json", #feeders for Chiara
+"All_feeder/65016_1522066_configuration.json",
 ]
-
 ts=[56,56,59,56]
 ts_det=[56,56,56,56]
 # feeder =f[4]
@@ -43,21 +45,28 @@ ts_det=[56,56,56,56]
 file  = joinpath(BASE_DIR, "test/data/Spanish/")
 hc_sto=[]
 hc_det=[]
-for i=1:6
+ind_hc=[]
+ind_hc_det=[]
+ind_hc_sto=[]
+for i=1:length(f)
     data  = SPM.build_mathematical_model_single_phase(file, f[i], t_s= ts[i])
+    append!(ind_hc,[data["PV"]["$j"]["source_id"] for j=1:length(data["PV"])])
     s2 = Dict("output" => Dict("duals" => true))
     result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
-    push!(hc_sto,result_hc_2["objective"])
+    append!(ind_hc_sto,[result_hc_2["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])])
+    append!(hc_sto,result_hc_2["objective"])
     data  = SPM.build_mathematical_model_single_phase(file, f[i], t_s= ts_det[i],cross_area_fact=a )
     result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)
-    push!(hc_det,result_hc["objective"])
-    all_feeder=DataFrame(A=1:0.2:2,feeder_sto=hc_sto,feeder_det=hc_det)
-    CSV.write("PV_HC_reinforcement_new_f$i.csv",all_feeder)
+    append!(ind_hc_det,[result_hc["solution"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])])
+    append!(hc_det,result_hc["objective"])
+    
 end
-#tO= TimerOutput()
+all_device=DataFrame(devicename=ind_hc, device_sto=ind_hc_sto,device_det=ind_hc_det)
+
+CSV.write("PV_HC_65016.csv",all_device)
 
 
-
+"""
 
 @timeit tO "outer" begin
     s2 = Dict("output" => Dict("duals" => true))
@@ -179,3 +188,4 @@ crd_density = density(result_ivr, "PV", 1, "crd_pv"; sample_size=10)
 #-----------------------------------
 # alternatively, you can first read in PowerModels dict, 
 # from a file with stochastic data extensions:
+"""

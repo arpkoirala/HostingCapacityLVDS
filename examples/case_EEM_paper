@@ -1,0 +1,99 @@
+"""
+################################################################################
+# Code for "A comparison of solar PV hosting capacity determined using         # 
+grid-based vs. market-based scenarios"                                         #
+Prepared for EEM 2023, Lappeenranta, Finland                                   #
+################################################################################
+# Based on StochasticPowerModels.jl                                            #
+# An extention package of PowerModels.jl for Stochastic (Optimal) Power Flow   #
+# See http://github.com/timmyfaraday/StochasticPowerModels.jl                  #
+################################################################################
+# This example is for Numerical Illustration 
+################################################################################
+
+# variables
+"""
+
+using Pkg
+Pkg.activate(".")
+using JuMP
+using Ipopt
+using PowerModels
+using StochasticPowerModels
+using PowerModelsDistribution
+using JSON
+using DataFrames
+using CSV
+using Statistics
+using Plots
+# constants 
+const PM = PowerModels
+const SPM = StochasticPowerModels
+
+# solvers
+ipopt_solver = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "print_level"=>5, "max_cpu_time"=>500.0)
+
+# input
+deg  = 2
+aux  = true
+red  = false
+
+
+# load_folder_all =["1132967_1400848","1132967_1400862","1132967_1400879","1132967_1400881","1132967_1400888","1132967_1400910","1132967_1400916", "1132967_1400951"]
+load_folder_all =["86315_785381"]#["65031_77832","1136065_1450304"]
+#load and other information
+load_dir= "C:/Users/karpan/Documents/PhD/EEM/output_allfeeder/output"
+
+load_folder=readdir(load_dir)[startswith.(readdir(load_dir),"PVin")]
+load_folder_all=[load[17:length(load)-4] for load in load_folder]
+
+file  = joinpath(BASE_DIR, "test/data/Spanish/")  
+
+
+load_file= "beta_lm_2016_8_6.csv"
+pv_file = "beta_pm_2016_8_6.csv"
+
+"""
+# Code to get grid only and grid market #
+"""
+
+for load_folder in load_folder_all[61:131]
+    print(load_folder)
+    device=[]
+    hc1=[]
+    hc2=[]
+    hc3=[]
+    hc=DataFrame()
+    s2 = Dict("output" => Dict("duals" => true))
+    feeder = "All_feeder/"*load_folder*"_configuration.json"
+    data  = SPM.build_mathematical_model_single_phase_market(file, feeder,load_file, pv_file,load_dir,load_folder, grid_only=false, t_s= 59)
+    result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2, stochastic=false)
+    [data["PV"]["$i"]["p_size_start"]=result_hc["solution"]["PV"]["$i"]["p_size"] for i=1:length(data["PV"])]
+    hc[!,"marketonly"]=[data["PV"]["$i"]["p_max"] for i=1:length(data["PV"])]
+    # result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+    
+    
+    result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+   
+    data  = SPM.build_mathematical_model_single_phase_market(file, feeder,load_file, pv_file,load_dir,load_folder, grid_only=true, t_s= 59)
+    [data["PV"]["$i"]["p_size_start"]=result_hc["solution"]["PV"]["$i"]["p_size"] for i=1:length(data["PV"])]
+    result_hc_grid= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)  
+    result_hc_eq= SPM.run_sopf_hc_equal_pv(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+    scatter([i for i=1:length(data["PV"])],[result_hc_2["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="with market signal", figsize=(28,8))
+    scatter!([i for i=1:length(data["PV"])],[result_hc_grid["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="only grid", figsize=(28,8))
+    # scatter!([i for i=1:length(data["PV"])],[result_hc_eq["solution"]["nw"]["1"]["PV"]["1"]["p_size"] for i=1:length(data["load"])],label="only grid eq PV", figsize=(28,8))
+    plot!(xlabel="Device Id")
+    plot!(ylabel="PV size [kWp]")
+    display(plot!(title="Market and grid interaction for $(load_folder)"))
+    savefig(load_dir*load_folder*".pdf")
+
+    hc1= [result_hc_2["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])]
+    hc2 = [result_hc_grid["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])]
+    # hc3 = [result_hc_eq["solution"]["nw"]["1"]["PV"]["1"]["p_size"] for i=1:length(data["load"])]
+    hc[!,"device"]= [data["PV"]["$i"]["source_id"] for i=1:length(data["load"])]
+    hc[!,"marketandgrid"]=hc1
+    hc[!,"gridonly"] =hc2
+    # hc[!,"eqPVgrid"] =hc3
+
+    CSV.write(load_dir*load_folder*".csv",hc)
+end

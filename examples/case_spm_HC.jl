@@ -10,7 +10,7 @@ Submitted to IEE Transactions of Power Systems.                                #
 # An extention package of PowerModels.jl for Stochastic (Optimal) Power Flow   #
 # See http://github.com/timmyfaraday/StochasticPowerModels.jl                  #
 ################################################################################
-# This example is for Numerical Illustration C and D on Section IV of the paper      #
+# This example is for Numerical Illustration C and D on Section IV of the paper#
 # In first Fig, OPF HC is compared with gPC-CC-OPF HC                          #
 # Second figure is Comparision of 4 CC-OPF scenarios
 • S1: The PV installations of consumers are in between 0 to 15 kWp. 
@@ -70,7 +70,7 @@ scatter([1,2,3,4,5,6,7],[result_hc_2["solution"]["nw"]["1"]["PV"]["$i"]["p_size"
 scatter!([1,2,3,4,5,6,7],[result_hc["solution"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="OPF HC", figsize=(28,8))
 plot!(xlabel="Device Id")
 plot!(ylabel="PV size [kWp]")
-plot!(title="Fig. 5: deterministic vs stochastic OPF")
+display(plot!(title="Fig. 5: deterministic vs stochastic OPF"))
 
 
 """
@@ -106,7 +106,7 @@ result_hc_s4= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg
 scatter!([1,2,3,4,5,6,7],[result_hc_s4["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="S4", figsize=(28,8))
 plot!(xlabel="Device Id")
 plot!(ylabel="PV size [kWp]")
-plot!(title="Fig 6: Different Scenario")
+display(plot!(title="Fig 6: Different Scenario"))
 
 
 """
