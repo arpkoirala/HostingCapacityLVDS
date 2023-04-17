@@ -78,10 +78,12 @@ For this application the installation of StochasticPowerModels.jl is not suggest
 
 ## Acknowledgements
 
-The primary developer is StochasticPowerModels.jl Tom Van Acker ([@timmyfaraday](https://github.com/timmyfaraday)), 
+The primary developer of StochasticPowerModels.jl is Tom Van Acker ([@timmyfaraday](https://github.com/timmyfaraday)), 
 with support from the following contributors:
 - Arpan Koirala ([@arpkoirala](https://github.com/arpkoirala)), KU Leuven, ACR formulation
 - Frederik Geth ([@frederikgeth](https://github.com/frederikgeth)), CSIRO, reduced IVR formulation
+
+The hosting capacity extension was developed by Arpan Koirala.
 
 The latest stable release of StochasticPowerModels can be obtained at:
 
