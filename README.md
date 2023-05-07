@@ -9,7 +9,7 @@ In this project file, the base code of StochasticPowerModels.jl is utilized to o
  ```
     using Pkg
     Pkg.activate(".")
-    Pkg.instantiate
+    Pkg.instantiate()
 ```
 ## Core Problem Specification
 
@@ -70,7 +70,7 @@ and 1 csv file:
 - The HC calculation of all feeders:
     - `examples/case_spm_HC_all_feeder.jl` is pointed out where the codes for HC calculation for all feeder and code to obtain Fig. 11 of the following paper:
     
-    Koirala, Arpan; Van Aacker, Tom; Hashmi, Md Umar; D'hulst, Reinhilde; Van Hertem, Dirk (2022): Chance-constrained optimization based PV hosting capacity calculation using general Polynomial Chaos. TechRxiv. Preprint. https://doi.org/10.36227/techrxiv.21394950.v1 
+    Koirala, Arpan; Van Aacker, Tom; Hashmi, Md Umar; D'hulst, Reinhilde; Van Hertem, Dirk (2022): Chance-constrained optimization based PV hosting capacity calculation using general Polynomial Chaos. TechRxiv. Preprint. https://doi.org/10.1109/TPWRS.2023.3258550 
 
     
 ## Installation
@@ -78,11 +78,18 @@ For this application the installation of StochasticPowerModels.jl is not suggest
 
 ## Acknowledgements
 
-The primary developer is Tom Van Acker ([@timmyfaraday](https://github.com/timmyfaraday)), 
+The primary developer of StochasticPowerModels.jl is Tom Van Acker ([@timmyfaraday](https://github.com/timmyfaraday)), 
 with support from the following contributors:
 - Arpan Koirala ([@arpkoirala](https://github.com/arpkoirala)), KU Leuven, ACR formulation
 - Frederik Geth ([@frederikgeth](https://github.com/frederikgeth)), CSIRO, reduced IVR formulation
 
+The hosting capacity extension was developed by Arpan Koirala.
+
+The latest stable release of StochasticPowerModels can be obtained at:
+
+```
+https://github.com/timmyfaraday/StochasticPowerModels.jl.git
+```
 ## License
 
 This code is provided under a BSD license.
