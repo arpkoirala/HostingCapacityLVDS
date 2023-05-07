@@ -1,3 +1,16 @@
+"""
+################################################################################
+# Code for "Grid-optimal energy community planning from a systems perspective"                                         #
+Arpan, Selina                                   #
+################################################################################
+# Based on StochasticPowerModels.jl                                            #
+# An extention package of PowerModels.jl for Stochastic (Optimal) Power Flow   #
+# See http://github.com/timmyfaraday/StochasticPowerModels.jl                  #
+################################################################################
+# This example is for Numerical Illustration for OPF based HC considering the grid limitation
+################################################################################
+"""
+
 using Pkg
 Pkg.activate(".")
 using JuMP
@@ -14,6 +27,11 @@ using Plots
 const PM = PowerModels
 const SPM = StochasticPowerModels
 
+voltage_base = 0.230  # (kV)
+power_base = 0.5  # (MW)
+Z_base = voltage_base^2/power_base # (Ohm)
+current_base = power_base/(voltage_base*1e-3) # (A)
+
 # solvers
 ipopt_solver = Ipopt.Optimizer
 
@@ -22,170 +40,47 @@ deg  = 2
 aux  = true
 red  = false
 
-#feeder = "All_feeder/65019_74478_configuration.json" 
+#To be in sync with previous study I propose doing deterministic OPF for 30 timeperiod where possibility of the violation is very high
+## the 30 time schedule with highest current is obtained from the  
 
-#feeder = "All_feeder/86315_785381_configuration.json" #50)% error feeder
+datadir= "C:/Users/karpan/Documents/PhD/Collaboration_selina/Inputfiles_Arpan/Inputfiles_Arpan/"
 
-#feeder = "All_feeder/1076069_1274125_configuration.json" #65025_80123_configuration.json"#1076069_1274125_configuration.json"
-# f=[ "All_feeder/65019_73796_configuration.json", #Feeders for Selina
-# "All_feeder/65019_74430_configuration.json",
-# "All_feeder/65019_74469_configuration.json",
-# "All_feeder/65019_74478_configuration.json",
-# "All_feeder/65019_74559_configuration.json",
-# "All_feeder/65019_74572_configuration.json",
-# ]
-f=[ "All_feeder/65016_1521529_configuration.json", #feeders for Chiara
-"All_feeder/65016_1522066_configuration.json",
+feeder = "All_feeder/65019_74478_configuration.json" 
+
+load_data=CSV.read(datadir*"CaseSpain/Load_data.tab", DataFrame;header=1)
+f=[ "All_feeder/65019_73796_configuration.json", #Feeders for Selina
+"All_feeder/65019_74430_configuration.json",
+"All_feeder/65019_74469_configuration.json",
+"All_feeder/65019_74478_configuration.json",
+"All_feeder/65019_74559_configuration.json",
+"All_feeder/65019_74572_configuration.json",
 ]
-ts=[56,56,59,56]
-ts_det=[56,56,56,56]
-# feeder =f[4]
-# feeder ="Pola/1076069_1274129_mod_configuration.json" #feeder with 7 consumer for test
-# data
-file  = joinpath(BASE_DIR, "test/data/Spanish/")
-hc_sto=[]
-hc_det=[]
-ind_hc=[]
-ind_hc_det=[]
-ind_hc_sto=[]
-for i=1:length(f)
-    data  = SPM.build_mathematical_model_single_phase(file, f[i], t_s= ts[i])
-    append!(ind_hc,[data["PV"]["$j"]["source_id"] for j=1:length(data["PV"])])
-    s2 = Dict("output" => Dict("duals" => true))
-    result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
-    append!(ind_hc_sto,[result_hc_2["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])])
-    append!(hc_sto,result_hc_2["objective"])
-    data  = SPM.build_mathematical_model_single_phase(file, f[i], t_s= ts_det[i],cross_area_fact=a )
-    result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)
-    append!(ind_hc_det,[result_hc["solution"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])])
-    append!(hc_det,result_hc["objective"])
-    
-end
-all_device=DataFrame(devicename=ind_hc, device_sto=ind_hc_sto,device_det=ind_hc_det)
 
-CSV.write("PV_HC_65016.csv",all_device)
+pv_data_S30=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_S_30.csv", DataFrame;header=1)
+pv_data_SE=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_SE.csv", DataFrame;header=1)
+pv_data_SW=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_SW.csv", DataFrame;header=1)
+pv_data_E=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_E.csv", DataFrame;header=1)
+pv_data_W=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_W.csv", DataFrame;header=1)
+pv_data=DataFrame(S=pv_data_S30[!,"0"], SE= pv_data_SE[!,"0"], SW=pv_data_SW[!,"0"],E=pv_data_E[!,"0"],W=pv_data_W[!,"0"])
+inst_data=CSV.read(datadir*"ConsumerBuildingData.csv", DataFrame;header=1)
 
 
-"""
-
-@timeit tO "outer" begin
-    s2 = Dict("output" => Dict("duals" => true))
-    
-    e=1;
-    m=1
-    for i=1:length(data["bus"])
-        if -result_hc_2["solution"]["nw"]["1"]["bus"]["$i"]["dual_voltage_max"]>500
-            l_old=data["bus"]["$i"]["λvmax"]
-            m=sample(result_hc_2, "bus", i, "vs"; sample_size=100000)
-            if quantile(m,[0.95])[1]>1.001*data["bus"]["$i"]["vmax"]^2
-                data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]^2-mean(m))/std(m)+0.3
-            elseif quantile(m,[0.95])[1]>1.0001*data["bus"]["$i"]["vmax"]^2
-                    data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]^2-mean(m))/std(m)+0.1
-            elseif quantile(m,[0.95])[1]< 0.99*data["bus"]["$i"]["vmax"]^2
-                data["bus"]["$i"]["λvmax"]= l_old-0.8
-            elseif quantile(m,[0.95])[1]< 1*data["bus"]["$i"]["vmax"]^2
-                data["bus"]["$i"]["λvmax"]= l_old-0.2
-            end
-        end
-    end
-
-    #[data["branch"]["$i"]["λcmax"]= 3 for i=1:18]
-    #data["branch"]["13"]["λcmax"]= 2
-    result_hc_1= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
+time_opf=CSV.read(datadir*"time_opf.csv", DataFrame;header=0)
+time_opf = time_opf[!,"Column1"]
 
 
-end
-
-for i=1:length(data["bus"])
-    if -result_hc_2["solution"]["nw"]["1"]["bus"]["$i"]["dual_voltage_max"]>500
-        l_old=data["bus"]["$i"]["λvmax"]
-        m=sample(result_hc_2, "bus", i, "vm"; sample_size=100000)
-        if quantile(m,[0.95])[1]>1.001*data["bus"]["$i"]["vmax"]
-            data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]-mean(m))/std(m)+0.3
-        elseif quantile(m,[0.95])[1]>1.0001*data["bus"]["$i"]["vmax"]
-                data["bus"]["$i"]["λvmax"]=2*l_old-(data["bus"]["$i"]["vmax"]-mean(m))/std(m)+0.1
-        else
-            data["bus"]["$i"]["λvmax"]= 2*l_old-(data["bus"]["$i"]["vmax"]-mean(m))/std(m)
-        end
-    end
-end
 
 
-while e>0.005
-    mean_voltage=[result_hc["solution"]["nw"]["1"]["bus"]["$j"]["vm"] for j=1:length(data["bus"])]
-    i=argmax(mean_voltage)
-    samp = sample(result_hc, "bus", i, "vm"; sample_size=10000)
-    if sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 > 0.055
-        if sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 > 0.08
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]+0.1 for i=45:52]
-        else 
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]+0.05 for i=1:length(data["bus"])]
-        end
-    elseif sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 < 0.045
-        if sum([a>data["bus"]["$i"]["vmax"] for a in samp])/10000 < 0.02
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]-0.1 for i=1:length(data["bus"])]
-        else 
-            [data["bus"]["$i"]["λvmax"]= data["bus"]["$i"]["λvmax"]-0.05 for i=1:length(data["bus"])]
-        end
-    end
+load_dist= "beta_lm_2016_8_6.csv"
+pv_dist = "beta_pm_2016_8_6.csv"
+pov_feeder=[]
+# for feeder in f
+#feeder = "All_feeder/86315_785381_configuration.json" #50)% error feeder
+    file  = joinpath(BASE_DIR, "test/data/Spanish/")   
 
-        result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-        mean_voltage=[result_hc["solution"]["nw"]["1"]["bus"]["$j"]["vm"] for j=1:length(data["bus"])]
-        i=argmax(mean_voltage)
-        e =  abs(0.05-sum([a>1.05 for a in sample(result_hc, "bus", i, "vm"; sample_size=10000)])/10000)
-    print("iteration:$m")
-    print(e)
-    m=m+1
-end
+    data  = SPM.build_mathematical_model_single_phase(file, feeder,load_dist,pv_dist, t_s= 0)
 
-[data["bus"]["$i"]["λvmax"]=2.4 for i=1:63]
-[data["branch"]["$i"]["λcmax"]=1.5 for i=1:63]
+    mn_network= SPM.mn_data_opf(data,load_data,pv_data, inst_data, time_opf)
+    [mn_network["nw"]["$j"]["branch"]["1"]["rate_a"]=200/current_base for j=1:length(mn_network["nw"])] #limiting the first branch current to 200
 
-result_hc2_4= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-
-a=[result_hc2_4["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:52]
-hc2= Dict()
-for i=30:80
- data  = SPM.build_mathematical_model_single_phase(file, feeder, t_s= i)
- [data["bus"]["$i"]["λvmax"]=2.4 for i=1:63]
- [data["branch"]["$i"]["λcmax"]=1.5 for i=1:63]
- result_hc2 = run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
- PV_HC = result_hc2["objective"]
- hc2[i]=PV_HC
-end
-#sdata = build_stochastic_data_hc(data, deg)
-#remove the existing generators and keep onl;y in slack bus
-#data["gen"] = Dict(k => v for (k, v) in data["gen"] if data["bus"][string(data["gen"][k]["gen_bus"])]["bus_type"] == 3)
-#[data["bus"][k]["bus_type"]=1 for (k,v) in data["bus"] if data["bus"][k]["bus_type"]==2]
-
-#-----------------------------------
-# run the convenience functions for stochastic OPF for IVR and ACR
-#result_ivr = run_sopf_iv(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-result_hc2 = run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red)
-
-@assert result_hc2["termination_status"] == PM.LOCALLY_SOLVED
-#@assert result_hc["termination_status"] == PM.LOCALLY_SOLVED
-#the optimal objective values (expectation) are 
-obj_ivr = result_hc2["objective"] 
-#bj_acr = result_hc["objective"] 
-
-# print variables for all polynomial indices k
-SPM.print_summary(result_hc2["solution"])
-
-# print variables for a specific index k
-k=1
-SPM.print_summary(result_hc2["solution"]["nw"]["$k"]["PV"])
-
-# get polynomial chaos coefficients for specific component
-crd_pv = pce_coeff(result_hc2, "PV", 1, "crd_pv") 
-
-# obtain 10 samples of the generator active power output variable
-crd_sample = sample(result_hc2, "PV", 1, "crd_pv"; sample_size=10) 
-
-# obtain an kernel density estimate of the PV active power output variable
-crd_density = density(result_ivr, "PV", 1, "crd_pv"; sample_size=10) 
-
-#-----------------------------------
-# alternatively, you can first read in PowerModels dict, 
-# from a file with stochastic data extensions:
-"""
+    result_hc,p_size= SPM.time_series_hc(mn_network, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)

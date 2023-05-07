@@ -1,3 +1,6 @@
+using Pkg
+Pkg.activate(".")
+Pkg.instantiate()
 using JuMP
 using Ipopt
 using PowerModels
@@ -67,3 +70,11 @@ result_ivr3 = PM.run_model(sdata, PM.IVRPowerModel, ipopt_solver, SPM.build_sopf
 obj_ivr3 = result_ivr3["objective"]
 
 @assert obj_ivr ≈ obj_ivr2 ≈ obj_ivr3
+
+using Plots
+v_sample_1 = sample(result_ivr, "bus", 1, "vm"; sample_size=1000)
+v_sample_2 = sample(result_ivr, "bus", 2, "vm"; sample_size=1000) 
+v_sample_3 = sample(result_ivr, "bus", 3, "vm"; sample_size=1000)
+histogram((v_sample_1))
+histogram!((v_sample_2))
+histogram!((v_sample_3))

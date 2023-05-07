@@ -899,3 +899,52 @@ end
 return network_model
 end;
 
+
+function naive_time_series_analysis(mn_model, time_steps)
+    solver = Ipopt.Optimizer
+    len_nodes=length(mn_model["nw"]["1"]["bus"])
+    result_pf = Dict{String,Any}()
+    power_1=zeros(time_steps,len_nodes-1)
+    voltage_5= zeros(time_steps,len_nodes)
+    current_1=zeros(time_steps,len_nodes-1)
+
+    s1 = Dict("output" => Dict("branch_flows" => true))
+    s2 = Dict("output" => Dict("duals" => true)) 
+    #branc_details = PowerModels.component_table(network_data, "branch", ["f_bus", "t_bus", "rate_a","br_status","br_r", "br_x"])
+    branc_details = PowerModels.component_table(mn_model["nw"]["1"], "branch", ["f_bus", "t_bus", "rate_a","br_status","br_r", "br_x"])
+    for (n,network) in mn_model["nw"]
+        network["per_unit"] = true
+        a=parse(Int,n)
+        #print(n)
+        # result[n] = run_ac_opf(network, solver; setting = s2);
+        # d0=PowerModels.component_table(result[n]["solution"], "bus", ["lam_kcl_i", "lam_kcl_r"]) ;
+       
+        result_pf[n] = PowerModels.run_pf(network, _PM.IVRPowerModel, solver; setting = s1);
+        m0 = PowerModels.component_table(result_pf[n]["solution"], "bus", ["vi", "vr"])
+        voltage_5[a,:]= sqrt.(m0[:,2].^2+m0[:,3].^2)
+        # current_1[a,:]=v[1,data["branch"]["2"]["t_bus"]]-v[1,data["branch"]["2"]["f_bus"]]/sqrt.(data["branch"]["2"]["br_r"]^2+data["branch"]["2"]["br_x"]^2)
+        # #power_1[n]=result[n]["solution"]["gen"]["1"]["pg"];
+        
+        # Injection_ac_orig = PowerModels.component_table(result_pf[n]["solution"], "branch", ["qf", "pf", "qt","pt"])
+        # thermal_ac_original = max(sqrt.(Injection_ac_orig[:,2].^2 + Injection_ac_orig[:,3].^2), sqrt.(Injection_ac_orig[:,4].^2 + Injection_ac_orig[:,5].^2))
+        # loss_1[a,:] = 100 * abs.(Injection_ac_orig[:,3] + Injection_ac_orig[:,5]) ./ branc_details[:,4]
+        # power_1[a,:] = 100 * thermal_ac_original ./ branc_details[:,4] 
+    end;
+    return result_pf, voltage_5
+end;
+
+
+function time_series_hc(mn_model, model, solver; aux=true, deg=2, red=false, stochastic=false)
+    result = Dict{String,Any}()
+    len_pv=length(mn_model["nw"]["1"]["PV"])
+    pv_size= zeros(length(mn_model["nw"]),len_pv)
+    for (n,network) in mn_model["nw"]
+        network["per_unit"] = true
+        a=parse(Int,n) 
+        display(n)
+        result[n] = _PM.run_model(network, model, solver, _SPM.build_sopf_hc_deterministic; multinetwork=false)
+        pv_size[a,:]=[result[n]["solution"]["PV"]["$j"]["p_size"] for j=1:len_pv]
+    end
+    return result,pv_size
+
+end

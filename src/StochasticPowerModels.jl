@@ -60,6 +60,7 @@ module StochasticPowerModels
     include("prob/sopf_hc.jl")
 
     include("util/util.jl")
+    include("util/data.jl")
 
     # export
     export BASE_DIR

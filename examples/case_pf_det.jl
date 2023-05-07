@@ -29,8 +29,10 @@ feeder = "POLA/1076069_1274129_mod_configuration.json"
 
 # data
 file  = joinpath(BASE_DIR, "test/data/Spanish/")
+load_file= "beta_lm_2016_8_6.csv"
+pv_file = "beta_pm_2016_8_6.csv"
 
-data  = SPM.build_mathematical_model_single_phase(file, feeder, t_s= 59)
+data  = SPM.build_mathematical_model_single_phase(file, feeder,load_file, pv_file, t_s= 59)
 
 
 
@@ -40,7 +42,19 @@ result_pf= SPM.run_pf_deterministic(data, PM.IVRPowerModel, ipopt_solver, aux=au
 
 
 it = Iterators.product(ntuple(_ -> 0:15, length(data["load"]))...)
+
+# it = Iterators.product(ntuple(_ -> [3,2], 7)...)
 p=collect(it);
+# d=[]
+# for x in p
+#     if sum(x)==18
+#         push!(d, [l for l in x])
+#     end
+# end
+
+# e=DataFrame(d)
+# writedlm("C:\\Users\\karpan\\Documents\\GitHub_ak\\HostingCapacityLVDS\\combination.csv", d, ',')
+
 
 feasible=[]
 infeasible=[]
