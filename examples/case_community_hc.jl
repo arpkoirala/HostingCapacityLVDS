@@ -84,3 +84,15 @@ pov_feeder=[]
     [mn_network["nw"]["$j"]["branch"]["1"]["rate_a"]=200/current_base for j=1:length(mn_network["nw"])] #limiting the first branch current to 200
 
     result_hc,p_size= SPM.time_series_hc(mn_network, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)
+
+    #TO have a dictionary with no of panels and device id (meter name).
+
+    no_panels=Dict()
+    no_panels["meterId"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
+    no_panels["p_size"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
+    no_panels["no_of_installation"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"]/0.220 for i =1:length(data["PV"])]
+
+    CSV.write("pv_inst.csv",DataFrame(no_panels)) #Use dlmwrite if array and CSV.write for dataframe
+
+
+

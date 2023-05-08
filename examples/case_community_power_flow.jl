@@ -77,7 +77,6 @@ pov_feeder=[]
     #6This is to check percentage of the time where voltage in network above 1.05
     #this counts all violations if there are multiple in the same time-period
     ov= sum(v.>1.05)/sum(v.>0)*100
-
     #however, other interesting way is just to compute the maximum voltage per timestamp as below; this gives actual percentage wher violations occur
     ov_t=sum([maximum(v[j,:]) for j=1:length(v[:,1])].>1.02)/length(v[:,1])
     # the following module is to get branch current using (V2-V1)/Z however it is not working now 
