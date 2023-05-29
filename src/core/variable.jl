@@ -166,12 +166,12 @@ function variable_PV_size(pm::AbstractPowerModel; nw::Int=nw_id_default, bounded
     if bounded
         for (i, PV) in _PM.ref(pm, nw, :PV)
             if haskey(PV, "p_max") & haskey(PV,"p_min")
-                print(PV)
+                print(PV["source_id"])
                 JuMP.set_lower_bound(p_size[i], PV["p_min"])
                 JuMP.set_upper_bound(p_size[i], PV["p_max"]) #2*PV["conn_cap_kW"])
             else
                 JuMP.set_lower_bound(p_size[i], 0)
-                JuMP.set_upper_bound(p_size[i], 15) #2*PV["conn_cap_kW"])
+                JuMP.set_upper_bound(p_size[i], 0) #2*PV["conn_cap_kW"])
             end
         end
     end

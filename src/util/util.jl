@@ -934,16 +934,18 @@ function naive_time_series_analysis(mn_model, time_steps)
 end;
 
 
-function time_series_hc(mn_model, model, solver; aux=true, deg=2, red=false, stochastic=false)
+function time_series_hc(mn_model, model, solver; aux=true, deg=2, red=false, stochastic=false, time=time)
     result = Dict{String,Any}()
     len_pv=length(mn_model["nw"]["1"]["PV"])
     pv_size= zeros(length(mn_model["nw"]),len_pv)
     for (n,network) in mn_model["nw"]
-        network["per_unit"] = true
         a=parse(Int,n) 
-        display(n)
-        result[n] = _PM.run_model(network, model, solver, _SPM.build_sopf_hc_deterministic; multinetwork=false)
-        pv_size[a,:]=[result[n]["solution"]["PV"]["$j"]["p_size"] for j=1:len_pv]
+        if a in time
+            network["per_unit"] = true
+            display(n)
+            result[n] = _PM.run_model(network, model, solver, _SPM.build_sopf_hc_deterministic; multinetwork=false)
+            pv_size[a,:]=[result[n]["solution"]["PV"]["$j"]["p_size"] for j=1:len_pv]
+        end
     end
     return result,pv_size
 

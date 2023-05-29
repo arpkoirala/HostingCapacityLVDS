@@ -74,7 +74,11 @@ time_opf = time_opf[!,"Column1"]
 load_dist= "beta_lm_2016_8_6.csv"
 pv_dist = "beta_pm_2016_8_6.csv"
 pov_feeder=[]
-# for feeder in f
+
+
+all_feeder=DataFrame()
+
+for feeder in f
 #feeder = "All_feeder/86315_785381_configuration.json" #50)% error feeder
     file  = joinpath(BASE_DIR, "test/data/Spanish/")   
 
@@ -83,16 +87,19 @@ pov_feeder=[]
     mn_network= SPM.mn_data_opf(data,load_data,pv_data, inst_data, time_opf)
     [mn_network["nw"]["$j"]["branch"]["1"]["rate_a"]=200/current_base for j=1:length(mn_network["nw"])] #limiting the first branch current to 200
 
-    result_hc,p_size= SPM.time_series_hc(mn_network, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)
+    result_hc,p_size= SPM.time_series_hc(mn_network, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false, time=[1,29])
 
     #TO have a dictionary with no of panels and device id (meter name).
 
     no_panels=Dict()
-    no_panels["meterId"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
-    no_panels["p_size"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
+    no_panels["meterId"]=[data["load"]["$i"]["source_id"] for i =1:length(data["PV"])]
+    no_panels["p_max"]=[mn_network["nw"]["1"]["PV"]["$i"]["p_max"] for i =1:length(data["PV"])]
+    no_panels["p_size_worst"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
+    no_panels["p_size_99_5"]=[result_hc["29"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
     no_panels["no_of_installation"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"]/0.220 for i =1:length(data["PV"])]
 
-    CSV.write("pv_inst.csv",DataFrame(no_panels)) #Use dlmwrite if array and CSV.write for dataframe
-
+    df=DataFrame(no_panels)
+    append!(all_feeder, df)
+end
 
 
