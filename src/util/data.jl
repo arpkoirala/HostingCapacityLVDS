@@ -56,17 +56,16 @@ function mn_data_opf(data, load_data, pv_data, inst_data,time_opf)
         # print(device["source_id"])
         print(device["source_id"] in names(load_data))
         if device["source_id"] in names(load_data)
-            load_profile =  load_data[!,device["source_id"]]  #Pick the profile from csv
-            load_profile= coalesce.(load_profile, 0.0)
+            load_profile = load_data[!,device["source_id"]]  #Pick the profile from csv
+            load_profile = coalesce.(load_profile, 0.0)
             load_profile = load_profile/1000 #scale from kWh to MW
             load_profile = load_profile/power_base #convert to per-uits
-            pv_inc=inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"roof-top orientation"]
-            
+            pv_inc=inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"roof-top orientation"]           
             pv_prof = Matrix(pv_data[!,pv_inc])
             pv_prof=coalesce.(pv_prof, 0.0)
-            pv=pv_prof.*inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"number of PV panels"]
+            pv=pv_prof.*inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"hh_PVlimit"]
             # print(pv_gen)
-            pv_max=inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"number of PV panels"]
+            pv_max=inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"hh_PVlimit"]
             pv_gen= pv_prof./(1e6*power_base)
             display(pv_max)
             
@@ -78,9 +77,9 @@ function mn_data_opf(data, load_data, pv_data, inst_data,time_opf)
                     mn_model["nw"]["$(i)"]["load"][id_s]["qd"] = qd/3
                     mn_model["nw"]["$(i)"]["PV"][id_s]["pd"] = pv_gen[time_opf[i]]/3*(1/0.22)
                     mn_model["nw"]["$(i)"]["PV"][id_s]["qd"] = 0
-                    mn_model["nw"]["$(i)"]["PV"][id_s]["p_max"] = pv_max[1]*0.220
+                    mn_model["nw"]["$(i)"]["PV"][id_s]["p_max"] = pv_max[1]
                     mn_model["nw"]["$(i)"]["PV"][id_s]["p_min"] = 0*0.220
-                    mn_model["nw"]["$(i)"]["PV"][id_s]["p_no_max"] = pv_max[1]
+                    mn_model["nw"]["$(i)"]["PV"][id_s]["p_no_max"] = pv_max[1]/0.22
 
 
                 
