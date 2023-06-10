@@ -63,6 +63,8 @@ pv_file = "beta_pm_2016_8_6.csv"
 # Code to plot the result of Fig. 5 without the scenario based method #
 """
 data  = SPM.build_mathematical_model_single_phase(file, feeder,load_file, pv_file, t_s= 59)
+[data["PV"]["$i"]["p_min"]=0 for i=1:7]    
+[data["PV"]["$i"]["p_max"]=15 for i=1:7]
 result_hc= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red, stochastic=false)
 s2 = Dict("output" => Dict("duals" => true))
 result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
@@ -97,6 +99,9 @@ scatter!([1,2,3,4,5,6,7],[result_hc_s2["objective"] for i=1:length(data["load"])
 [data["PV"]["$i"]["p_min"]=5 for i=3:3]
 [data["PV"]["$i"]["p_max"]=5 for i=3:3]
 
+[data["PV"]["$i"]["p_min"]=0 for i=4:7]    
+[data["PV"]["$i"]["p_max"]=15 for i=4:7]
+
 result_hc_s3= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
 scatter!([1,2,3,4,5,6,7],[result_hc_s3["solution"]["nw"]["1"]["PV"]["$i"]["p_size"] for i=1:length(data["load"])],label="S3", figsize=(28,8))
 
@@ -114,6 +119,9 @@ Fig. 8 Moment based reformulation
 
 """
 data  = SPM.build_mathematical_model_single_phase(file, feeder,load_file, pv_file, t_s= 59)
+[data["PV"]["$i"]["p_min"]=0 for i=1:7]    
+[data["PV"]["$i"]["p_max"]=15 for i=1:7]
+
 result_hc_2= SPM.run_sopf_hc(data, PM.IVRPowerModel, ipopt_solver, aux=aux, deg=deg, red=red; setting=s2)
 
 if result_hc_2["termination_status"]== PM.LOCALLY_SOLVED
