@@ -13,6 +13,7 @@ Arpan, Selina                                   #
 """
 
 using Pkg
+Pkg.instantiate()
 Pkg.activate(".")
 using JuMP
 using Ipopt

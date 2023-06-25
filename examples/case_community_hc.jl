@@ -78,7 +78,7 @@ pov_feeder=[]
 
 all_feeder=DataFrame()
 
-for feeder in f
+for feeder in f[1]
 #feeder = "All_feeder/86315_785381_configuration.json" #50)% error feeder
     file  = joinpath(BASE_DIR, "test/data/Spanish/")   
 
