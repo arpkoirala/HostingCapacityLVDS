@@ -64,7 +64,7 @@ function mn_data_opf(data, load_data, pv_data, inst_data,time_opf)
             
             pv_prof = Matrix(pv_data[!,pv_inc])
             pv_prof=coalesce.(pv_prof, 0.0)
-            pv=pv_prof.*inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"number of PV panels"]
+            # pv=pv_prof.*inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"number of PV panels"]
             # print(pv_gen)
             pv_max=inst_data[(inst_data[!,"Meter_name"].==device["source_id"]),:][!,"number of PV panels"]
             pv_gen= pv_prof./(1e6*power_base)
