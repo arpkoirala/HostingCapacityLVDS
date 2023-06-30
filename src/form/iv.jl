@@ -291,9 +291,7 @@ function constraint_det_pv_power_real(pm::AbstractIVRModel, n::Int, i, p, pd, p_
 
     crd_pv = _PM.var(pm, n, :crd_pv,p)
     cid_pv = _PM.var(pm, n, :cid_pv,p)
-
-    JuMP.@constraint(pm.model,  pd * p_size *(1-curt) ==   (vr * crd_pv + vi * cid_pv))
-            
+    JuMP.@constraint(pm.model,  pd * p_size[1] *(1-curt) ==   (vr * crd_pv + vi * cid_pv))
 end
 
 ""

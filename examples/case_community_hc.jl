@@ -12,6 +12,7 @@ Arpan, Selina                                   #
 """
 
 using Pkg
+# Pkg.instantiate()
 Pkg.activate(".")
 using JuMP
 using Ipopt
@@ -43,7 +44,7 @@ red  = false
 #To be in sync with previous study I propose doing deterministic OPF for 30 timeperiod where possibility of the violation is very high
 ## the 30 time schedule with highest current is obtained from the  
 
-datadir= "C:/Users/karpan/Documents/PhD/Collaboration_selina/Inputfiles_Arpan/Inputfiles_Arpan/"
+datadir= "C:/Users/arpan/OneDrive/Documents/PhD/Collaboration_selina/Inputfiles_Arpan/Inputfiles_Arpan/"
 
 feeder = "All_feeder/65019_74478_configuration.json" 
 
@@ -56,7 +57,7 @@ f=[ "All_feeder/65019_73796_configuration.json", #Feeders for Selina
 "All_feeder/65019_74572_configuration.json",
 ]
 
-pv_data_S30=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_S_30.csv", DataFrame;header=1)
+pv_data_S30=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_S.csv", DataFrame;header=1)
 pv_data_SE=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_SE.csv", DataFrame;header=1)
 pv_data_SW=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_SW.csv", DataFrame;header=1)
 pv_data_E=CSV.read(datadir*"CaseSpain/PVprofiles/PVprofile_E.csv", DataFrame;header=1)
@@ -77,8 +78,7 @@ pov_feeder=[]
 
 
 all_feeder=DataFrame()
-
-for feeder in f[1]
+for feeder in f
 #feeder = "All_feeder/86315_785381_configuration.json" #50)% error feeder
     file  = joinpath(BASE_DIR, "test/data/Spanish/")   
 
@@ -96,7 +96,7 @@ for feeder in f[1]
     no_panels["p_max"]=[mn_network["nw"]["1"]["PV"]["$i"]["p_max"] for i =1:length(data["PV"])]
     no_panels["p_size_worst"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
     no_panels["p_size_99_5"]=[result_hc["29"]["solution"]["PV"]["$i"]["p_size"] for i =1:length(data["PV"])]
-    no_panels["no_of_installation"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"]/0.220 for i =1:length(data["PV"])]
+    no_panels["no_of_installation"]=[result_hc["1"]["solution"]["PV"]["$i"]["p_size"]/0.405 for i =1:length(data["PV"])]
 
     df=DataFrame(no_panels)
     append!(all_feeder, df)

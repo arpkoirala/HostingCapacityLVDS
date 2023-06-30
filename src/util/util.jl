@@ -134,6 +134,8 @@ kwpu = (1e-3)/power_base
 
 network_model = Dict{String,Any}()
 configuration_json_dict = Dict{Any,Any}()
+print(config_file_name)
+print(dir*config_file_name[1:length(config_file_name)-19])
 device_df=CSV.read(dir*config_file_name[1:length(config_file_name)-19]*".csv", DataFrame)
 
 dist_lv=CSV.read(dir*load_dist_csv, DataFrame)
@@ -437,6 +439,7 @@ network_model["PV"]=deepcopy(network_model["load"]);
 [network_model["PV"][d]["μ"]=s_dict[string(length(s_dict))]["pc"] for d in   keys(network_model["PV"])]
 [network_model["PV"][d]["σ"]=s_dict[string(length(s_dict))]["pd"] for d in   keys(network_model["PV"])]
 [network_model["PV"][d]["pd"]=s_dict[string(length(s_dict))]["pd"]/1e6/ power_base / 3 for d in   keys(network_model["PV"])]
+[network_model["PV"][d]["p_size"]=0 for d in   keys(network_model["PV"])] 
 return network_model
 end;
 
@@ -881,6 +884,7 @@ network_model["PV"]=deepcopy(network_model["load"]);
 [network_model["PV"][d]["σ"]=s_dict[string(length(s_dict))]["pd"] for d in   keys(network_model["PV"])]
 [network_model["PV"][d]["pd"]=s_dict[string(length(s_dict))]["pd"]/1e6/ power_base / 3 for d in   keys(network_model["PV"])]
 [network_model["PV"][d]["p_min"]=0 for d in   keys(network_model["PV"])] 
+[network_model["PV"][d]["p_size"]=0 for d in   keys(network_model["PV"])] 
 if grid_only == true
     for d in keys(network_model["PV"])
         print(solar_cost[network_model["PV"][d]["source_id"]])
@@ -919,7 +923,7 @@ function naive_time_series_analysis(mn_model, time_steps)
         # result[n] = run_ac_opf(network, solver; setting = s2);
         # d0=PowerModels.component_table(result[n]["solution"], "bus", ["lam_kcl_i", "lam_kcl_r"]) ;
        
-        result_pf[n] = PowerModels.run_pf(network, _PM.IVRPowerModel, solver; setting = s1);
+        result_pf[n] = run_pf_deterministic(network, _PM.IVRPowerModel, solver, aux=true, deg=2, red=false, stochastic=false)
         m0 = PowerModels.component_table(result_pf[n]["solution"], "bus", ["vi", "vr"])
         voltage_5[a,:]= sqrt.(m0[:,2].^2+m0[:,3].^2)
         # current_1[a,:]=v[1,data["branch"]["2"]["t_bus"]]-v[1,data["branch"]["2"]["f_bus"]]/sqrt.(data["branch"]["2"]["br_r"]^2+data["branch"]["2"]["br_x"]^2)
